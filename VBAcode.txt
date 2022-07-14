@@ -16,8 +16,6 @@ Sub getNamesOfAllFilesInFolder(certificateType As String)
         
     End If
     
-    
-    'Updateby Extendoffice
     Set folder = Application.FileDialog(msoFileDialogFolderPicker)
     If folder.Show <> -1 Then Exit Sub
     xDir = folder.SelectedItems(1)
@@ -227,9 +225,8 @@ Sub extractSinglePDF(sourceFileName As String)
 
 End Sub
 
-
 Sub parseExtractedDataCoursera(sourceSheetName As String, currentIndex As Integer)
-'Sub parseExtractedDataCoursera()
+' Sub parseExtractedDataCoursera()
 
 '
 ' Look for all the relevant data from the extracted PDF files
@@ -246,6 +243,8 @@ Sub parseExtractedDataCoursera(sourceSheetName As String, currentIndex As Intege
     Dim dateStrings(0 To 2) As String
     Dim dateStringFinal As String
     
+    Dim datePartsFound As Integer
+    
     Dim title As String
     
     Dim row1 As Integer
@@ -257,10 +256,16 @@ Sub parseExtractedDataCoursera(sourceSheetName As String, currentIndex As Intege
     Dim arrStringSplit() As String
     Dim arrSplitStrings() As Variant
     
+    Dim CellSkipped As Boolean
+    
+    CellSkipped = False
+    
     Windows("pdfExtractionTest.xlsm").Activate
 
     ' Find the day month year and format it
     Sheets(sourceSheetName).Select
+    
+    On Error GoTo ParseErrorDate
     
     Cells.Find(What:="has successfully completed", After:=ActiveCell, LookIn:=xlFormulas2, _
         LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
@@ -269,20 +274,52 @@ Sub parseExtractedDataCoursera(sourceSheetName As String, currentIndex As Intege
     row1 = ActiveCell.Row
     col1 = ActiveCell.Column
     
+    ' Loop and search until all terms are found
+    
     dateStrings(0) = Cells(row1 - 2, col1).Value
-    dateStrings(1) = Cells(row1 - 2, col1 + 1).Value
-    dateStrings(2) = Cells(row1 - 2, col1 + 2).Value
+    datePartsFound = 1
+    i = 1
+    
+    Do While datePartsFound < 3
+        If IsEmpty(Cells(row1 - 2, col1 + i).Value) = False Then
+            dateStrings(datePartsFound) = Cells(row1 - 2, col1 + i).Value
+            datePartsFound = datePartsFound + 1
+        End If
+        
+        i = i + 1
+        
+        If i > 20 Then
+            Exit Do
+        End If
+        
+    Loop
     
     dateStringFinal = Join(dateStrings, "-")
     
     dateStringFinal = Replace(dateStringFinal, ",", "")
     
-    Sheets(outputSheetName).Select
+    Let ParsedDate = CDate(dateStringFinal)
     
-    Range("E" & (currentIndex + 1)).Value = CDate(dateStringFinal)
+    On Error GoTo 0
+    
+ParseErrorDateResume:
+
+    Sheets(outputSheetName).Select
+    If CellSkipped Then
+        ' Color the cell red
+        Range("E" & (currentIndex + 1)).Interior.Color = 5263615
+        Range("E" & (currentIndex + 1)).Value = dateStringFinal
+    Else
+        Range("E" & (currentIndex + 1)).Value = CDate(dateStringFinal)
+    
+    End If
+        
+    CellSkipped = False
     
     ' Find the name of the certificate (the whole string)
     Sheets(sourceSheetName).Select
+    
+    On Error GoTo ParseErrorCertificateName
     
     Cells.Find(What:="has successfully completed", After:=ActiveCell, LookIn:=xlFormulas2, _
         LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
@@ -301,13 +338,29 @@ Sub parseExtractedDataCoursera(sourceSheetName As String, currentIndex As Intege
     For i = row2 To (row1 - 1)
         title = title & " " & Cells(i, 1).Value
     Next i
+      
+    On Error GoTo 0
     
+ParseErrorCertificateNameResume:
+
     Sheets(outputSheetName).Select
+    If CellSkipped Then
+        ' Color the cell red
+        Range("C" & (currentIndex + 1)).Interior.Color = 5263615
+    Else
+        Range("C" & (currentIndex + 1)).Value = title
     
-    Range("C" & (currentIndex + 1)).Value = title
+        If Len(title) < 10 Then
+            Range("C" & (currentIndex + 1)).Interior.Color = 65535
+        End If
+    End If
+        
+    CellSkipped = False
     
     ' Find the authorized by line
     Sheets(sourceSheetName).Select
+    
+    On Error GoTo ParseErrorAuthorizeBy
     
     row2 = ActiveCell.Row
     
@@ -323,6 +376,12 @@ Sub parseExtractedDataCoursera(sourceSheetName As String, currentIndex As Intege
         End If
         
         i = i + 1
+        
+        If i > 20 Then
+            Exit Do
+            ' TODO: Implement better error handling and color the cells red
+        End If
+        
     Loop
     
     i = i + 1
@@ -332,41 +391,67 @@ Sub parseExtractedDataCoursera(sourceSheetName As String, currentIndex As Intege
     
     title = arrStringSplit(0)
     
+    On Error GoTo 0
+    
+ParseErrorAuthorizeByResume:
+    
     Sheets(outputSheetName).Select
     
-    Range("D" & (currentIndex + 1)).Value = title
+    If CellSkipped Then
+        ' Color the cell red
+        Range("D" & (currentIndex + 1)).Interior.Color = 5263615
+    Else
+        Range("D" & (currentIndex + 1)).Value = title
+    
+    End If
+    
+    CellSkipped = False
     
     ' Find the Certificate issuer name
     Sheets(sourceSheetName).Select
     
     Do While InStr(Cells(i, 1).Value, "image") <> 0
         i = i + 1
+        
+        If i > 20 Then
+            CellSkipped = True
+            Exit Do
+        End If
     Loop
     
-    title = Cells(i, 1).Value
+    If CellSkipped Then
+        
+        Sheets(outputSheetName).Select
+        
+        ' Color the cell red
+        Range("K" & (currentIndex + 1)).Interior.Color = 5263615
+        Range("L" & (currentIndex + 1)).Interior.Color = 5263615
+        Range("M" & (currentIndex + 1)).Interior.Color = 5263615
+    Else
+        title = Cells(i, 1).Value
+        
+        Sheets(outputSheetName).Select
+        
+        Range("K" & (currentIndex + 1)).Value = title
+        
+        Sheets(sourceSheetName).Select
+        title = Cells(i + 1, 1).Value
+        Sheets(outputSheetName).Select
+        Range("L" & (currentIndex + 1)).Value = title
+        
+        Sheets(sourceSheetName).Select
+        title = Cells(i + 2, 1).Value
+        Sheets(outputSheetName).Select
+        Range("M" & (currentIndex + 1)).Value = title
     
-    Sheets(outputSheetName).Select
-    
-    Range("K" & (currentIndex + 1)).Value = title
-    
-    Sheets(sourceSheetName).Select
-    
-    title = Cells(i + 1, 1).Value
-    
-    Sheets(outputSheetName).Select
-    
-    Range("L" & (currentIndex + 1)).Value = title
-    
-    Sheets(sourceSheetName).Select
-    
-    title = Cells(i + 2, 1).Value
-    
-    Sheets(outputSheetName).Select
-    
-    Range("M" & (currentIndex + 1)).Value = title
+    End If
+        
+    CellSkipped = False
     
     ' Find the Verify at segment
     Sheets(sourceSheetName).Select
+    
+    On Error GoTo ParseErrorVerify
     
     Cells.Find(What:="coursera.org/verify", After:=ActiveCell, LookIn:=xlFormulas2, _
         LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
@@ -378,12 +463,48 @@ Sub parseExtractedDataCoursera(sourceSheetName As String, currentIndex As Intege
     arrStringSplit = Split(title, "/")
     title = arrStringSplit(UBound(arrStringSplit) - LBound(arrStringSplit))
     
+    On Error GoTo 0
+    
+ParseErrorVerifyResume:
+
     Sheets(outputSheetName).Select
     
-    Range("N" & (currentIndex + 1)).Value = title
+    If CellSkipped Then
+        ' Color the cell red
+        Range("N" & (currentIndex + 1)).Interior.Color = 5263615
+    Else
+        Range("N" & (currentIndex + 1)).Value = title
+    
+    End If
     
     Range("F" & (currentIndex + 1)).Value = "Course Completion"
         
+EndOfSub:
+    
+    Sheets("Macro").Select
+    Exit Sub
+    
+ParseErrorDate:
+    
+    CellSkipped = True
+    Resume ParseErrorDateResume
+
+ParseErrorCertificateName:
+
+    CellSkipped = True
+    Resume ParseErrorCertificateNameResume
+    
+ParseErrorAuthorizeBy:
+    
+    CellSkipped = True
+    Resume ParseErrorAuthorizeByResume
+    
+ParseErrorVerify:
+
+    CellSkipped = True
+    Resume ParseErrorVerifyResume
+    
+    
 End Sub
 
  Sub parseExtractedDataLinkedin(sourceSheetName As String, currentIndex As Integer)
@@ -410,8 +531,13 @@ End Sub
     Dim certificateID As String
     certificateID = ""
     
+    Dim CellSkipped As Boolean
+    CellSkipped = False
+    
     ' Get the title of the cert
     Sheets(sourceSheetName).Select
+    
+    On Error GoTo ParseErrorTitle
     
     Cells.Find(What:="Congratulations", After:=ActiveCell, LookIn:=xlFormulas2, _
         LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
@@ -423,7 +549,7 @@ End Sub
     
     row1 = ActiveCell.Row
     
-    Cells.Find(What:="Course completed on", After:=ActiveCell, LookIn:=xlFormulas2, _
+    Cells.Find(What:="completed on", After:=ActiveCell, LookIn:=xlFormulas2, _
         LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
         MatchCase:=False, SearchFormat:=False).Activate
         
@@ -437,14 +563,27 @@ End Sub
         
     End If
     
+    On Error GoTo 0
+    
+ParseErrorTitleResume:
     
     Sheets(outputSheetName).Select
     
-    Range("C" & (currentIndex + 1)).Value = title
+    If CellSkipped Then
+        ' Color the cell red
+        Range("C" & (currentIndex + 1)).Interior.Color = 5263615
+    Else
+        Range("C" & (currentIndex + 1)).Value = title
+    
+    End If
+    
+    CellSkipped = False
 
     ' Extract the date of the course completion
     
     Sheets(sourceSheetName).Select
+    
+    On Error GoTo ParseErrorDate
     
     title = Cells(row2, col1).Value
     
@@ -453,9 +592,19 @@ End Sub
     
     title = arrStringSplit(0)
     
+ParseErrorDateResume:
+
     Sheets(outputSheetName).Select
     
-    Range("E" & (currentIndex + 1)).Value = title
+    If CellSkipped Then
+        ' Color the cell red
+        Range("E" & (currentIndex + 1)).Interior.Color = 5263615
+    Else
+        Range("E" & (currentIndex + 1)).Value = title
+    
+    End If
+    
+    CellSkipped = False
     
     ' Extract the certificate id
     Sheets(sourceSheetName).Select
@@ -473,15 +622,15 @@ RetryCertificateParse:
     
     If certificateID = "" Then
         
-        On Error GoTo CertificateNotFound
+        On Error GoTo CertificateNotFoundError
         
         Cells.Find(What:="Certificate No", After:=ActiveCell, LookIn:=xlFormulas2, _
         LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
         MatchCase:=False, SearchFormat:=False).Activate
         
-        On Error GoTo 0
-        
         certificateID = ActiveCell.Value
+    
+        On Error GoTo 0
     
     End If
         
@@ -489,9 +638,18 @@ RetryCertificateParse:
     
     title = arrStringSplit(1)
     
+CertificateNotFoundErrorResume:
+    
     Sheets(outputSheetName).Select
     
-    Range("K" & (currentIndex + 1)).Value = title
+    If CellSkipped Then
+        ' Color the cell red
+        Range("K" & (currentIndex + 1)).Interior.Color = 5263615
+        Range("K" & (currentIndex + 1)).Value = "Error: No certificate id found"
+    Else
+        Range("K" & (currentIndex + 1)).Value = title
+    
+    End If
     
     ' Attempt to Extract the field of study (use error handling)
     
@@ -521,6 +679,8 @@ SkipFieldOfStudy:
     
     Sheets(sourceSheetName).Select
     
+    Range("A1").Select
+    
     On Error GoTo ProgramParseError
     
     Cells.Find(What:="Program", After:=ActiveCell, LookIn:=xlFormulas2, _
@@ -531,6 +691,11 @@ SkipFieldOfStudy:
     
     title = ActiveCell.Value
         
+    ' To account for Programming being found instead
+    If InStr(title, "rogramming") Then
+        GoTo SkipProgram
+    End If
+    
     arrStringSplit = Split(title, ": ")
     
     title = arrStringSplit(1)
@@ -577,10 +742,9 @@ EndOfSub:
     Sheets("Macro").Select
     Exit Sub
     
-CertificateNotFound:
-    
-    MsgBox "Error: No certificate id found"
-    GoTo EndOfSub
+CertificateNotFoundError:
+    CellSkipped = True
+    Resume CertificateNotFoundErrorResume
 
 InitialCertificateParseError:
     Resume RetryCertificateParse
@@ -593,6 +757,14 @@ ProgramParseError:
     
 CPEParseError:
     Resume SkipCPE
+    
+ParseErrorTitle:
+    CellSkipped = True
+    Resume ParseErrorTitleResume
+    
+ParseErrorDate:
+    CellSkipped = True
+    Resume ParseErrorDateResume
     
 End Sub
 
