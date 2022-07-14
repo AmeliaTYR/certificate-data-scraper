@@ -683,7 +683,7 @@ SkipFieldOfStudy:
     
     On Error GoTo ProgramParseError
     
-    Cells.Find(What:="Program", After:=ActiveCell, LookIn:=xlFormulas2, _
+    Cells.Find(What:="Program:", After:=ActiveCell, LookIn:=xlFormulas2, _
         LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
         MatchCase:=False, SearchFormat:=False).Activate
     
