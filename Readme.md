@@ -1,13 +1,13 @@
 # Excel Certificate scraper
 An excel macros automation created to extract information from Coursera and Linkedin PDF files and consolidate them in an excel sheet format.
 
-## Motivation
+## Motivation :speech_balloon:
 While working on skills upgrading through online learning platforms, it becomes quickly apparent
 that there are few sites that can reasonably display the large library of certificates in a manner that is concise, not overwhelming to the viewer and easy to search through.
 
 As such, extraction of the certificate data and migrating from the typical Linkedin profile built-in certificate display system to a custom certificate data display site is preferable. The idea is to condense the information while also providing links to the individual certificate proofs, so as not to subtract from the authenticity of the claims.
 
-## Future improvments
+## Future improvments :fast_forward:
 
 ### General Improvements
 
@@ -40,13 +40,13 @@ For the title if the title is shorter than expected, the cell is currently highl
 #### Update to include parsing of Top Skills Covered
 Additional field discovered in Linkedin Pathway Certificate search
 
-## Companion web display template
+## Companion web display template :star:
 > I am currently working on a website template to display the newly extracted data using the format created.
 
-## User guide
+## User guide :information_source:
 > User guide coming soon!
 
-## Open source
+## Open source :tada:
 This project is formally open for public use and contributions. Additionally, you may open issues if the code does not run as expected (ie report bugs)
 
 ## Credits
@@ -58,7 +58,7 @@ The code for looping through a folder and subfolders is adapted from [ExtendOffi
 - Added parameter to determine which sheet the function would output the data to
 
 ### Testing Credits
-Special thanks to [Francene](https://github.com/franceneee) for helping to test out the automation!
+Special thanks to [Francene](https://github.com/franceneee):sparkles: for helping to test out the automation!
 
 ## Conclusion
 This project has given me hands on experience with writing VBA macros, and I learned a lot about the extent to which Macros are able to automate repetitive tasks such as PDF scraping. I hope to find more tasks to automate with VBA.
