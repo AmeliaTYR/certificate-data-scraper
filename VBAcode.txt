@@ -1,0 +1,607 @@
+Sub getNamesOfAllFilesInFolder(certificateType As String)
+'
+' List all the files in the folder including the files in the sub folders
+'
+    
+    Windows("pdfExtractionTest.xlsm").Activate
+    
+    If certificateType = "Coursera" Then
+        Sheets("filePathsCoursera").Select
+    
+    ElseIf certificateType = "Linkedin" Then
+        Sheets("filePathsLinkedin").Select
+    
+    Else
+        GoTo InvalidCertificateError
+        
+    End If
+    
+    
+    'Updateby Extendoffice
+    Set folder = Application.FileDialog(msoFileDialogFolderPicker)
+    If folder.Show <> -1 Then Exit Sub
+    xDir = folder.SelectedItems(1)
+    Call listFilesInFolder(xDir, True)
+    
+EndOfSub:
+
+    Sheets("Macro").Select
+    Exit Sub
+    
+InvalidCertificateError:
+
+    MsgBox "Error: Invalid certificateType"
+    GoTo EndOfSub
+    
+    
+End Sub
+
+Sub listFilesInFolder(ByVal xFolderName As String, ByVal xIsSubfolders As Boolean)
+'
+' For each file in the folder and sub directories,
+' List the path and the file name in the excel
+'
+
+    Dim xFileSystemObject As Object
+    Dim xFolder As Object
+    Dim xSubFolder As Object
+    Dim xFile As Object
+    Dim rowIndex As Long
+    Set xFileSystemObject = CreateObject("Scripting.FileSystemObject")
+    Set xFolder = xFileSystemObject.GetFolder(xFolderName)
+    rowIndex = Application.ActiveSheet.Range("A65536").End(xlUp).Row + 1
+    For Each xFile In xFolder.Files
+      Application.ActiveSheet.Cells(rowIndex, 2).Formula = xFile.Name
+      Application.ActiveSheet.Cells(rowIndex, 1).Formula = xFolder.Path
+      rowIndex = rowIndex + 1
+    Next xFile
+    If xIsSubfolders Then
+      For Each xSubFolder In xFolder.SubFolders
+        listFilesInFolder xSubFolder.Path, True
+      Next xSubFolder
+    End If
+    Set xFile = Nothing
+    Set xFolder = Nothing
+    Set xFileSystemObject = Nothing
+    
+End Sub
+
+Sub getFileNamesCoursera()
+    Call getNamesOfAllFilesInFolder("Coursera")
+    
+End Sub
+
+Sub getFileNamesLinkedin()
+    Call getNamesOfAllFilesInFolder("Linkedin")
+    
+End Sub
+
+Sub extractAllPDFdata(certificateType As String)
+'
+' Extract all the data from every pdf in the list
+'
+    
+    Windows("pdfExtractionTest.xlsm").Activate
+    
+    Dim inputDataSheet As String
+    
+    If certificateType = "Coursera" Then
+        inputDataSheet = "filePathsCoursera"
+    
+    ElseIf certificateType = "Linkedin" Then
+        inputDataSheet = "filePathsLinkedin"
+    
+    Else
+        GoTo InvalidCertificateError
+        
+    End If
+    
+    Sheets(inputDataSheet).Select
+    
+    If IsEmpty(Range("A2").Value) Then
+        GoTo NoDataFoundError
+    End If
+    
+    Dim numCerts As Integer
+    Dim numRows As Integer
+    Dim i As Integer
+    
+    Dim fullFilePath As String
+    Dim sourceSheetName As String
+    Dim fileName As String
+    
+    Range("A1").Select
+    numRows = Range("A1").End(xlDown).Row
+    
+    ' Function to loop through each of the files in the list
+    For i = 2 To numRows
+        
+        fullFilePath = Cells(i, 1) & "\" & Cells(i, 2)
+        fileName = Cells(i, 2)
+        
+        ' goto the starter sheet
+        Sheets("StarterSheet").Select
+        
+        ' For each of the files, use the get data from
+        ' PDF function in excel to extract the data
+        extractSinglePDF (fullFilePath)
+        
+        sourceSheetName = "querySheet"
+        
+        Sheets(sourceSheetName).Select
+        
+        ' Run the correct extracter for coursera vs linkedin
+        If certificateType = "Coursera" Then
+            Call parseExtractedDataCoursera(sourceSheetName, i - 1)
+            Sheets("parsedDataCoursera").Select
+            Range("J" & (i)).Value = fileName
+            
+        ElseIf certificateType = "Linkedin" Then
+            Call parseExtractedDataLinkedin(sourceSheetName, i - 1)
+            Sheets("parsedDataLinkedin").Select
+            Range("J" & (i)).Value = fileName
+        
+        Else
+            GoTo InvalidCertificateError
+            
+        End If
+        
+        Application.DisplayAlerts = False
+        
+        ' clean up, remove the new sheet
+        Sheets(sourceSheetName).Delete
+        
+        ' clean up remove the unwanted query
+        ActiveWorkbook.Queries("queryName").Delete
+        
+        Application.DisplayAlerts = True
+        
+        Sheets(inputDataSheet).Select
+        
+    Next i
+    
+EndOfSub:
+
+    Sheets("Macro").Select
+    Exit Sub
+    
+InvalidCertificateError:
+
+    MsgBox "Error: Invalid certificateType"
+    GoTo EndOfSub
+
+NoDataFoundError:
+    
+    MsgBox "Error: No certificate data found"
+    GoTo EndOfSub
+    
+End Sub
+
+
+Sub extractSinglePDF(sourceFileName As String)
+'
+' Extract the table from an individual PDF
+' The same code is used to just get the PDF information in the form of a table
+'
+
+' Note: the " character is like an escape character for VBA
+
+    Windows("pdfExtractionTest.xlsm").Activate
+
+    Dim outputSheetName As String
+    Dim listObjectDisplayName As String
+    Dim queryName As String
+    
+    listObjectDisplayName = "extracted"
+    
+    ' This is hardcoded
+    queryName = "queryName"
+
+    ActiveWorkbook.Queries.Add Name:=queryName, Formula:= _
+        "Pdf.Tables(File.Contents(""" & sourceFileName & """), [Implementation=""1.3""]){[Id=""Page001""]}[Data]"
+    
+    ActiveWorkbook.Worksheets.Add
+    ActiveSheet.Name = "querySheet"
+    
+    With ActiveSheet.ListObjects.Add(SourceType:=0, Source:= _
+        "OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=""" & queryName & """;Extended Properties=""""" _
+        , Destination:=Range("$A$1")).QueryTable
+        .CommandType = xlCmdSql
+        .CommandText = Array("SELECT * FROM [" & queryName & "]")
+        .RowNumbers = False
+        .FillAdjacentFormulas = False
+        .PreserveFormatting = True
+        .RefreshOnFileOpen = False
+        .BackgroundQuery = True
+        .RefreshStyle = xlInsertDeleteCells
+        .SavePassword = False
+        .SaveData = True
+        .AdjustColumnWidth = True
+        .RefreshPeriod = 0
+        .PreserveColumnInfo = True
+        .ListObject.DisplayName = listObjectDisplayName
+        .Refresh BackgroundQuery:=False
+    End With
+    Application.WindowState = xlNormal
+
+
+End Sub
+
+
+Sub parseExtractedDataCoursera(sourceSheetName As String, currentIndex As Integer)
+'Sub parseExtractedDataCoursera()
+
+'
+' Look for all the relevant data from the extracted PDF files
+'
+
+'    Dim sourceSheetName As String, currentIndex As Integer
+'    sourceSheetName = "querySheet"
+'    currentIndex = 1
+    
+    Dim outputSheetName As String
+
+    outputSheetName = "parsedDataCoursera"
+    
+    Dim dateStrings(0 To 2) As String
+    Dim dateStringFinal As String
+    
+    Dim title As String
+    
+    Dim row1 As Integer
+    Dim row2 As Integer
+    Dim col1 As Integer
+    
+    Dim i As Integer
+    
+    Dim arrStringSplit() As String
+    Dim arrSplitStrings() As Variant
+    
+    Windows("pdfExtractionTest.xlsm").Activate
+
+    ' Find the day month year and format it
+    Sheets(sourceSheetName).Select
+    
+    Cells.Find(What:="has successfully completed", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+    
+    row1 = ActiveCell.Row
+    col1 = ActiveCell.Column
+    
+    dateStrings(0) = Cells(row1 - 2, col1).Value
+    dateStrings(1) = Cells(row1 - 2, col1 + 1).Value
+    dateStrings(2) = Cells(row1 - 2, col1 + 2).Value
+    
+    dateStringFinal = Join(dateStrings, "-")
+    
+    dateStringFinal = Replace(dateStringFinal, ",", "")
+    
+    Sheets(outputSheetName).Select
+    
+    Range("E" & (currentIndex + 1)).Value = CDate(dateStringFinal)
+    
+    ' Find the name of the certificate (the whole string)
+    Sheets(sourceSheetName).Select
+    
+    Cells.Find(What:="has successfully completed", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+    ActiveCell.Offset(1).Select
+    
+    row2 = ActiveCell.Row
+    
+    Cells.Find(What:="an online", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+    row1 = ActiveCell.Row
+    
+    For i = row2 To (row1 - 1)
+        title = title & " " & Cells(i, 1).Value
+    Next i
+    
+    Sheets(outputSheetName).Select
+    
+    Range("C" & (currentIndex + 1)).Value = title
+    
+    ' Find the authorized by line
+    Sheets(sourceSheetName).Select
+    
+    row2 = ActiveCell.Row
+    
+    title = ""
+    
+    i = row1
+    
+    Do While InStr(title, "Coursera") = 0
+        If i = row1 Then
+            title = Cells(i, 1).Value
+        Else
+            title = title & " " & Cells(i, 1).Value
+        End If
+        
+        i = i + 1
+    Loop
+    
+    i = i + 1
+    
+    arrStringSplit = Split(title, "authorized by ")
+    arrStringSplit = Split(arrStringSplit(1), " and offered")
+    
+    title = arrStringSplit(0)
+    
+    Sheets(outputSheetName).Select
+    
+    Range("D" & (currentIndex + 1)).Value = title
+    
+    ' Find the Certificate issuer name
+    Sheets(sourceSheetName).Select
+    
+    Do While InStr(Cells(i, 1).Value, "image") <> 0
+        i = i + 1
+    Loop
+    
+    title = Cells(i, 1).Value
+    
+    Sheets(outputSheetName).Select
+    
+    Range("K" & (currentIndex + 1)).Value = title
+    
+    Sheets(sourceSheetName).Select
+    
+    title = Cells(i + 1, 1).Value
+    
+    Sheets(outputSheetName).Select
+    
+    Range("L" & (currentIndex + 1)).Value = title
+    
+    Sheets(sourceSheetName).Select
+    
+    title = Cells(i + 2, 1).Value
+    
+    Sheets(outputSheetName).Select
+    
+    Range("M" & (currentIndex + 1)).Value = title
+    
+    ' Find the Verify at segment
+    Sheets(sourceSheetName).Select
+    
+    Cells.Find(What:="coursera.org/verify", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+    
+    ' split and extract the verify ID rather than the whole link for cleaner linking in data retrieval
+    title = ActiveCell.Value
+    
+    arrStringSplit = Split(title, "/")
+    title = arrStringSplit(UBound(arrStringSplit) - LBound(arrStringSplit))
+    
+    Sheets(outputSheetName).Select
+    
+    Range("N" & (currentIndex + 1)).Value = title
+    
+    Range("F" & (currentIndex + 1)).Value = "Course Completion"
+        
+End Sub
+
+ Sub parseExtractedDataLinkedin(sourceSheetName As String, currentIndex As Integer)
+'
+' Look for all the relevant data from the extracted PDF files
+'
+
+    ' Extract the cert name
+    Dim outputSheetName As String
+    
+    outputSheetName = "parsedDataLinkedin"
+    
+    Dim row1 As Integer
+    Dim row2 As Integer
+    Dim col1 As Integer
+    
+    Dim i As Integer
+    
+    Dim title As String
+    
+    Dim arrStringSplit() As String
+    Dim arrSplitStrings() As Variant
+    
+    Dim certificateID As String
+    certificateID = ""
+    
+    ' Get the title of the cert
+    Sheets(sourceSheetName).Select
+    
+    Cells.Find(What:="Congratulations", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+    
+    ActiveCell.Offset(1).Select
+    
+    title = ActiveCell.Value
+    
+    row1 = ActiveCell.Row
+    
+    Cells.Find(What:="Course completed on", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+    row2 = ActiveCell.Row
+    col1 = ActiveCell.Column
+    
+    If row1 <> row2 - 1 Then
+        For i = row1 To (row2 - 1)
+            title = title & " " & Cells(i, 1).Value
+        Next i
+        
+    End If
+    
+    
+    Sheets(outputSheetName).Select
+    
+    Range("C" & (currentIndex + 1)).Value = title
+
+    ' Extract the date of the course completion
+    
+    Sheets(sourceSheetName).Select
+    
+    title = Cells(row2, col1).Value
+    
+    arrStringSplit = Split(title, "on ")
+    arrStringSplit = Split(arrStringSplit(1), " at")
+    
+    title = arrStringSplit(0)
+    
+    Sheets(outputSheetName).Select
+    
+    Range("E" & (currentIndex + 1)).Value = title
+    
+    ' Extract the certificate id
+    Sheets(sourceSheetName).Select
+    
+    ' NOTE: certificate parsing assumes certificate id is
+    On Error GoTo InitialCertificateParseError
+    
+    Cells.Find(What:="Certificate Id", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+    certificateID = ActiveCell.Value
+    
+RetryCertificateParse:
+    
+    If certificateID = "" Then
+        
+        On Error GoTo CertificateNotFound
+        
+        Cells.Find(What:="Certificate No", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+        On Error GoTo 0
+        
+        certificateID = ActiveCell.Value
+    
+    End If
+        
+    arrStringSplit = Split(certificateID, ": ")
+    
+    title = arrStringSplit(1)
+    
+    Sheets(outputSheetName).Select
+    
+    Range("K" & (currentIndex + 1)).Value = title
+    
+    ' Attempt to Extract the field of study (use error handling)
+    
+    Sheets(sourceSheetName).Select
+    
+    On Error GoTo FieldOfStudyParseError
+
+    Cells.Find(What:="Field of Study", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+    On Error GoTo 0
+    
+    title = ActiveCell.Value
+        
+    arrStringSplit = Split(title, ": ")
+    
+    title = arrStringSplit(1)
+    
+    Sheets(outputSheetName).Select
+    
+    Range("L" & (currentIndex + 1)).Value = title
+
+SkipFieldOfStudy:
+    
+    ' Attempt to Extract the program (use error handling)
+    
+    Sheets(sourceSheetName).Select
+    
+    On Error GoTo ProgramParseError
+    
+    Cells.Find(What:="Program", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+    
+    On Error GoTo 0
+    
+    title = ActiveCell.Value
+        
+    arrStringSplit = Split(title, ": ")
+    
+    title = arrStringSplit(1)
+    
+    Sheets(outputSheetName).Select
+    
+    Range("M" & (currentIndex + 1)).Value = title
+    
+SkipProgram:
+    
+    ' Attempt to Extract the continuing professional education credit (use error handling)
+    
+    Sheets(sourceSheetName).Select
+    
+    On Error GoTo CPEParseError
+    
+    Cells.Find(What:="Continuing Professional Education Credit", After:=ActiveCell, LookIn:=xlFormulas2, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+    On Error GoTo 0
+        
+    title = ActiveCell.Value
+        
+    arrStringSplit = Split(title, ": ")
+    
+    title = arrStringSplit(1)
+    
+    Sheets(outputSheetName).Select
+    
+    Range("N" & (currentIndex + 1)).Value = title
+
+SkipCPE:
+    
+    ' Fill default values
+    Sheets(outputSheetName).Select
+    
+    Range("D" & (currentIndex + 1)).Value = "LinkedIn Learning"
+    
+    Range("F" & (currentIndex + 1)).Value = "Course Completion"
+    
+EndOfSub:
+    
+    Sheets("Macro").Select
+    Exit Sub
+    
+CertificateNotFound:
+    
+    MsgBox "Error: No certificate id found"
+    GoTo EndOfSub
+
+InitialCertificateParseError:
+    Resume RetryCertificateParse
+
+FieldOfStudyParseError:
+    Resume SkipFieldOfStudy
+    
+ProgramParseError:
+    Resume SkipProgram
+    
+CPEParseError:
+    Resume SkipCPE
+    
+End Sub
+
+Sub extractAllPDFDataCoursera()
+    Call extractAllPDFdata("Coursera")
+    
+End Sub
+
+Sub extractAllPDFDataLinkedin()
+    Call extractAllPDFdata("Linkedin")
+    
+End Sub
