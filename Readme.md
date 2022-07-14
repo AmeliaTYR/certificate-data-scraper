@@ -30,6 +30,27 @@ error handling is required for when the search parameters are not found within t
 ### Parsing of other Certificate types
 Other certificate formats could potentially be added. Sample certificate data is required.
 
+## Longest common substring
+Use of longest common substring to sort the certificates by category automatically based on folder
+
+## Further search for patterns 
+For more dynamic parsing of certs where there are variations in the import
+
+## Review of assumptions
+Proper review and documentation of the hard coded segments to better identify
+
+## Potential use of OpenCV for text extraction
+To double check, may be possible to also run an opencv analysis of the file to identify the text and 
+cross refer to reduce the error rates
+
+## Skipping of empty cells
+If information searched for is not found, may want to skip empty cells
+For the title if the title is shorter than expected, try checking if the cell to the right is empty or contains 
+the rest of the text like the bugged example
+
+## Update to include parsing of Top Skills Covered
+Additional field discovered in Linkedin Pathway search
+
 ## Companion web display template
 I am currently working on a website template to display the newly extracted data.
 
