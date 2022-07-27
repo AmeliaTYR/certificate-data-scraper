@@ -1,6 +1,6 @@
 # Excel Certificate Scraper User Guide
 
-Extract data from all your downloaded pdf certificates and condense them into a easy to process and use excel sheet!
+Extract data from all your downloaded pdf certificates and condense them into an easy-to-process and use excel sheet!
 
 Further tools to add your certificate data to your personal website coming soon!
 
