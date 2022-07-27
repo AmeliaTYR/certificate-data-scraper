@@ -46,7 +46,7 @@ Additional field discovered in Linkedin Pathway Certificate search
 ## User guide :information_source:
 > User guide updated!
 
-The user guide is now complete and can be found here: https://ameliatyr.github.io/certificate-data-scraper/
+The user guide is now complete and can be found [here](https://ameliatyr.github.io/certificate-data-scraper/)
 
 ## Open source :tada:
 This project is formally open for public use and contributions. Additionally, you may open issues if the code does not run as expected (ie report bugs)
