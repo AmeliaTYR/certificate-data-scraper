@@ -34,7 +34,7 @@ This may appear as you are not the author of the Macros. If you are concerned ab
 
 ![](/images/15Subfolders.png)
 
-Additionally, have your certificates sorted into folder by Linkedin and Coursera. The naming of the folder does not matter, and each folder can also have subfolders as shown in the example above. The only requirements are as follows:
+Additionally, have your certificates sorted into a folder by Linkedin and Coursera. The naming of the folder does not matter, and each folder can also have subfolders as shown in the example above. The only requirements are as follows:
 
 - All files found in the folder and its subfolder are of pdf type. 
 - The folder for Coursera certificates only contains Coursera certificates.
@@ -89,7 +89,7 @@ To view the output of the macros, you can view the `parsedDataLinkedin` sheet. Y
 
 #### Tips for data use
 You end up with a sheet for your coursera data
-and a sheet for your Linkedin data. You could display this data in a tabular form on your persnal website or Linkedin profile for ease of viewing.
+and a sheet for your Linkedin data. You could display this data in a tabular form on your personal website or Linkedin profile for ease of viewing.
 
 
 ## Assumptions
