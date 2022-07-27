@@ -44,7 +44,9 @@ Additional field discovered in Linkedin Pathway Certificate search
 > I am currently working on a website template to display the newly extracted data using the format created.
 
 ## User guide :information_source:
-> User guide coming soon!
+> User guide updated!
+
+The user guide is now complete and can be found here: https://ameliatyr.github.io/certificate-data-scraper/
 
 ## Open source :tada:
 This project is formally open for public use and contributions. Additionally, you may open issues if the code does not run as expected (ie report bugs)
