@@ -4,6 +4,11 @@ Extract data from all your downloaded pdf certificates and condense them into a 
 
 Further tools to add your certificate data to your personal website coming soon!
 
+## Why Use this Macros?
+While working on skills upgrading through online learning platforms, it becomes quickly apparent that there are few sites that can reasonably display the large library of certificates in a manner that is concise, not overwhelming to the viewer and easy to search through.
+
+As such, extraction of the certificate data and migrating from the typical Linkedin profile built-in certificate display system to a custom certificate data display site is preferable. The idea is to condense the information while also providing links to the individual certificate proofs, so as not to subtract from the authenticity of the claims.
+
 ## Using the Macros
 
 #### Set up
