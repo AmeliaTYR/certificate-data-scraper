@@ -9,6 +9,14 @@ While working on skills upgrading through online learning platforms, it becomes 
 
 As such, extraction of the certificate data and migrating from the typical Linkedin profile built-in certificate display system to a custom certificate data display site is preferable. The idea is to condense the information while also providing links to the individual certificate proofs, so as not to subtract from the authenticity of the claims.
 
+## Downloading the Macros
+
+The Macros can be found in the `pdfExtractionTest.xlsm` file found [here](https://github.com/AmeliaTYR/certificate-data-scraper/blob/main/pdfExtractionTest.xlsm)
+
+![](/images/download1File.png)
+
+Click the download button as shown above and save the file to your computer to use the macros.
+
 ## Using the Macros
 
 #### Set up
