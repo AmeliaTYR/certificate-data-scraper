@@ -60,7 +60,7 @@ The code for looping through a folder and subfolders is adapted from [ExtendOffi
 - Added parameter to determine which sheet the function would output the data to
 
 ### Testing Credits
-Special thanks to [Francene](https://github.com/franceneee):sparkles: for helping to test out the automation and proof readingmy user guide!
+Special thanks to [Francene](https://github.com/franceneee):sparkles: for helping to test out the automation and proof reading my user guide!
 
 ## Conclusion
 This project has given me hands on experience with writing VBA macros, and I learned a lot about the extent to which Macros are able to automate repetitive tasks such as PDF scraping. I hope to find more tasks to automate with VBA.
