@@ -7,6 +7,17 @@ that there are few sites that can reasonably display the large library of certif
 
 As such, extraction of the certificate data and migrating from the typical Linkedin profile built-in certificate display system to a custom certificate data display site is preferable. The idea is to condense the information while also providing links to the individual certificate proofs, so as not to subtract from the authenticity of the claims.
 
+## Companion web display template :star:
+> I am currently working on a website template to display the newly extracted data using the format created.
+
+## User guide :information_source:
+> User guide updated!
+
+The user guide is now complete and can be found [here](https://ameliatyr.github.io/certificate-data-scraper/)
+
+## Open source :tada:
+This project is formally open for public use and contributions. Additionally, you may open issues if the code does not run as expected (ie report bugs)
+
 ## Future improvments :fast_forward:
 
 ### General Improvements
@@ -39,17 +50,6 @@ For the title if the title is shorter than expected, the cell is currently highl
 
 #### Update to include parsing of Top Skills Covered
 Additional field discovered in Linkedin Pathway Certificate search
-
-## Companion web display template :star:
-> I am currently working on a website template to display the newly extracted data using the format created.
-
-## User guide :information_source:
-> User guide updated!
-
-The user guide is now complete and can be found [here](https://ameliatyr.github.io/certificate-data-scraper/)
-
-## Open source :tada:
-This project is formally open for public use and contributions. Additionally, you may open issues if the code does not run as expected (ie report bugs)
 
 ## Credits
 
